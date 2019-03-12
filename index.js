@@ -36,15 +36,19 @@ const FilesystemStorage = {
     key: string,
     callback: (error: ?Error, result: ?string) => void
   ) =>
-    RNFetchBlob.fs.readFile(pathForKey(options.toFileName(key)), options.encoding)
-      .then(data => {
-        callback && callback(null, data)
-        if (!callback) return data
-      })
-      .catch(error => {
-        callback && callback(error)
-        if (!callback) throw error
-      }),
+    RNFetchBlob.fs.exists(options.storagePath)
+    .then(exists => exists ? true : RNFetchBlob.fs.mkdir(options.storagePath))
+    .then(() => RNFetchBlob.fs.exists(pathForKey(options.toFileName(key))))
+    .then(exists => exists ? true : RNFetchBlob.fs.writeFile(pathForKey(key), '', options.encoding))
+    .then(() => RNFetchBlob.fs.readFile(pathForKey(options.toFileName(key)), options.encoding))
+    .then(data => {
+      callback && callback(null, data)
+      if (!callback) return data
+    })
+    .catch(error => {
+      callback && callback(error)
+      if (!callback) throw error
+    }),
 
   removeItem: (
     key: string,
